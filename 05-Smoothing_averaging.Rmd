@@ -1,0 +1,8 @@
+# Smoothing and averaging
+
+## Bagging
+
+Bootstrap aggregation, or bagging, is a general-purpose procedure for reducing the
+bagging variance of a statistical learning method (especially with decision trees).
+
+See Introduction to statistical learning, section 8.2.

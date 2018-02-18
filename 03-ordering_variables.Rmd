@@ -1,0 +1,135 @@
+# Ordering the variables
+
+## Introduction
+
+The criteria presented in Chapter 2 are out-of-sample measures of adequacy for a given model. Model selection consists in finding the *best* model (or a limited set), like the one optimizing the out-of-sample adequacy. This implies comparing the potential models that can be built given the available data.
+
+In high dimensional settings, the available set of potential predictors can be very large and an exhaustive building of potential models is just impossible. One hence needs to find *suitable* methods for ordering the predictors that enter the model sequentially, to constitute, at most, $\huge p$ potential models to be assessed and compared.
+
+In this chapter, we present some available ordering algorithms, which have the following form: 
+
+1. Let $\huge \cal{M}_0$ denote the null model, which typically contains no predictors.
+2. For $\huge k = 0,\ldots,p-1$, do :
+  (a) Consider all $\huge p-k$ models that augment the predictors in $\huge \mathcal{M}_k$ with one additional predictor.
+  (b) Choose the *best* among these $\huge p-k$ models, and call it $\huge \mathcal{M}_{k+1}$.
+3. Stop the algorithm if $\huge \mathcal{M}_{k+1}$ is not better than $\huge \mathcal{M}_{k}$ and provide $\huge \mathcal{M}_{k}$ as output.
+
+These algorithms are generally named stepwise forward algorithms and they differ in the definition of *best* in 2(b) and in the stopping rule criteria in 3. For the latter, it is actually chosen among the criteria presented in Chapter 2.
+
+> Exercise: Compare the number of models to be considered in an exhaustive approach to the ones considered in a stepwise forward approach. Choose $\huge p=\{5,10,15,20\}$ and suppose that the true (best) model has $\huge p$ and $\huge p/2$ predictors.
+
+## Least squares stepwise and orthogonal matching pursuit
+
+## Classification And Regression Tree (CART) [^7]
+
+[^7]: See also [@HaTiFr:09], chapter 9.
+
+The regression model involves estimating the *conditional mean* of the response variable $\huge Y$ given a set of predictors $\huge X_j, j=1,\ldots,p$ (collected in the $\huge n\times p$ *design matrix* $\huge \mathbf{X}$), i.e. $\huge \mu(\mathbf{X})=\mathbf{X}\beta, \dim(\beta)=p$. The parameters $\huge \beta$ represent the slopes of the linear regression of $\huge Y$ on $\huge \mathbf{X}$. The basis of regression trees is to approximate these slopes by partitionning the observed predictors into consecutive sets of values, for which the observed mean response is computed. More precisely, tree-based methods partition the predictors' space (feature space) into a set of rectangles, and
+then fit a simple model (i.e. computes the mean) in each one.
+
+The partitionning is done sequentially, with usually a binary partionning (i.e. in two consecutive parts), one predictor at the time. Figure \ref{} shows such a sequence in the case of two predictors $\huge X_1, X_2$, with splitting values $\huge t_m$ and (splitted) regions $\huge R_m, m=1,\ldots,M, M=5$. Note that the partition on the top left panel is not possible since one of the consequence of a recursive splitting is that each region is necessary included in only one larger region. 
+
+> Illustration of the tree method (taken from [@HaTiFr:09]) \
+![Top](Figures/RegTree.png) 
+
+A regression tree algorithm has the following features (at each stage of the algorithm) that are problem dependent:
+
+- criterion for the choice of the splitting variable $\huge X_j$
+- criterion for the splitting value $\huge t_m$
+- the model that is fitted in each region $\huge R_m$
+- the size of the tree $\huge M$
+- the topology (shape) the tree should have. 
+
+### Regression tree
+
+In the linear regression model, since one is modelling a conditional mean, it makes sense to fit a constant model in each region $\huge R_m$, 
+so that the fitted model at the *mth* stage of the algoritm is
+\begin{equation}
+\huge
+\hat{\mu}(\mathbf{X})= \sum_{m=1}^M c_m(y_i\vert \mathbf{x}_i\in R_m)
+\end{equation}
+with 
+\begin{equation}
+\huge
+c_m(y_i\vert \mathbf{x}_i\in R_m)=\frac{1}{n_m}\sum_i^n y_i \iota (\mathbf{x}_i\in R_m), n_m=\sum_i^n \iota (\mathbf{x}_i\in R_m)
+\end{equation}
+so that the residual sum of squares (RSS) $\huge \sum_{i=1}^n\left(y_i-\hat{\mu}(\mathbf{x}_i)\right)^2$ is minimized.
+
+At stage $\huge m$ of the algorithm, two new regions will be created (actually one of the former region will be split into two parts), $\huge R_{m_1}(t_m)$
+and $\huge R_{m_2}(t_m)$ according to a splitting scalar $\huge t_m$ so that the RSS is minimized, i.e.
+\begin{eqnarray}
+\huge
+\min_{j,t_m}& \huge \left\{\sum_{\mathbf{x}_i \in R_{m_1}(t_m)} \left(y_i-c_m(y_i\vert \mathbf{x}_i\in R_{m_1}(t_m))\right)^2 \right. \\  & \left.  \huge + 
+\sum_{\mathbf{x}_i \in R_{m_2}(t_m)} \left(y_i-c_m(y_i\vert \mathbf{x}_i \in R_{m_2}(t_m))\right)^2\right\}
+\end{eqnarray}
+Hence, the splitting objective does only depend on the RSS of the two newly created regions (and not the others), which is a necessary simplification 
+in order to avoid running into computationnally infeasible algorithm.
+
+For the size of the tree, there are several strategies. One approach
+would to stop splitting (or growing the tree) when the decrease in RSS (computed globally) due to the
+split is below some threshold. Another strategy is to set a priori the tree size $\huge M$ and then
+*prun* the tree using *cost-complexity pruning*. Let the subtree $\huge T \subset T_M$ of the tree $\huge T_M$ obtained by fixing the size to $\huge M$, let also
+$\huge \vert T\vert$ be the size of $\huge T$ and $\huge R_m(T), c_m(T)$ defined accordingly as before, 
+the cost complexity criterion is given by
+\begin{equation}
+\huge
+C_{\alpha}(T)=\sum_{m=1}^{\vert T\vert}\sum_{\mathbf{x}_i\in R_m(T)}\left(y_i-c_m(T)\right)^2 - \alpha \vert T\vert
+\end{equation}
+Hence, the idea is to find, for each $\huge \alpha$, the (unique) subtree $\huge T_{\alpha} \subset T_M$ that minimizes $\huge C_{\alpha}(T)$.
+The tuning parameter $\huge \alpha \geq 0$ governs the tradeoff between tree size (to avoid overfitting) and its
+goodness of fit to the data. Large values of $\huge \alpha$ result in smaller trees $\huge T_{\alpha}$ ($\huge \alpha$ corresponding to $\huge T_M$). A sequence of subtrees can hence be constructed by letting $\huge \alpha$ increase, and stop when a criterion such as tenfold cross-validation is optimized.
+
+> Exercise: play with the rpart package in R (see also <https://www.statmethods.net/advstats/cart.html>) and a suitable dataset.
+
+### Classification Trees
+
+If the target is a classification outcome taking values $\huge k=1, 2,\ldots,K$, the criteria for splitting (growing)
+and pruning the tree need to be adapted. Let $\huge p_{mk}=1/n_m\sum_{\mathbf{x}_i\in R_m}\iota(y_i= k)$ be the proportion of 
+of class $\huge k$ observations in region $\huge m$. Different alternatives to the RSS (i.e. risk measures) exist and include the following:
+
+- *Misclassification error*: $\huge 1-p_{mk}$
+- *Gini index*: $\huge \sum_{k=1}^Kp_{mk}(1-p_{mk})= \sum_{k=1}^K\sum_{k'\neq k}p_{mk}p_{mk'}$
+- *Cross-entropy or deviance*: $\huge - \sum_{k=1}^Kp_{mk}\log(p_{mk})$
+
+When $\huge K=2$, one is in the binary case, which can be modelled as a *logistic regression*, i.e.
+$\huge Y_i\vert\mathbf{x}_i\sim B(1,\pi(\mathbf{x}_i))$, with $\huge \mbox{logit}(\pi(\mathbf{x}_i))=\mathbf{x}_i\beta, \dim(\beta)=p$, or
+\begin{equation}
+\huge
+\pi(\mathbf{x}_i)=\frac{\exp(\mathbf{x}_i\beta)}{1+\exp(\mathbf{x}_i\beta)}
+\end{equation}
+In that case, the deviance measure will correspond the the best fitted logistic regression.
+
+> Figure: Put here a figure like FIGURE 9.3 in [@HaTiFr:09] with the caption *Alternative 
+risk measures in the binary case, as a function
+of the proportion $\huge \pi$. The deviance has been scaled to pass through
+$\huge (0.5, 0.5)$.
+
+The deviance and the Gini index have the advantage of being differentiable functions, and hence more amenable to
+numerical optimization. 
+
+> Exercise: write the CART algorithm (with pruniing) in the classification case.
+
+> Exercise: play with the rpart package in R (see also <https://www.statmethods.net/advstats/cart.html>) and a suitable dataset.
+
+### Remarks
+
+- CART methods provide prediction models $\huge \hat{\mu}(\mathbf{X})$. They hence do not necessarily lead to parsimonious models, which, in terms of model interpretability, might be a serious problem. Are there ways around it?
+
+- In classification problems, the consequences of misclassifying observations
+are more serious in some classes than others. For example, it is probably
+worse to predict that a person will not have a heart attack when he/she
+actually will, than vice versa. To account for this, one can define a $\huge K \times K$ loss matrix $\huge L$, with $\huge L_{kk'}$ being the loss incurred for classifying a class $\huge k$ observation as class $\huge k'$, with obviously $\huge L_{kk}=0, \forall k$. The Gini index could then be modified as $\huge \sum_{k=1}^K\sum_{k'\neq k}L_{kk'}p_{mk}p_{mk'}$ which has only an effect for $\huge K>2$. In the binary case,  a better approach is to directly weight the
+observations in class $\huge k$ by $\huge L_{kk'}$ and use either the Gini index or the deviance. 
+
+- One major problem with trees is their high variance. Often a small change
+in the data can result in a very different series of splits, making interpre-
+tation somewhat precarious. Averaging methods such as bagging (see Section ???) can be used to reduce the variability of the tree estimator.
+
+
+
+
+### Others 
+
+- matching pursuit
+- etc.
+
