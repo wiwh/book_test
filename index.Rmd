@@ -15,7 +15,6 @@ description: "This is the content of the course Model Selection. The output form
 knitr::opts_chunk$set(cache=TRUE)
 ```
 # Introduction
-Hi cesare.
 ## Read this part first
 
 Anyone is invited to use any part of this eBook as long as credit is given. To cite this book, please use:
